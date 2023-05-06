@@ -1,0 +1,1 @@
+pandoc -f commonmark+wikilinks_title_after_pipe -t native
