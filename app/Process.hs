@@ -297,12 +297,18 @@ latexTheoremEnvTypeHeader t =
 latexProcessTheoremEnv :: TheoremEnv -> [Block]
 -- Handle figures separately
 latexProcessTheoremEnv (TheoremEnv FigureEnv envTag envDesc) =
-  [Para $ [envStart] ++ inlines ++ [envEnd]] where
-    envStartTex = "\\begin{figure}\n\\centering\n\\caption{"
+  [Para $ [envStart] ++ [image] ++ caption ++ [envEnd]] where
+    envStartTex = "\\begin{figure}\n\\centering\n"
     envStart = RawInline "tex" envStartTex
+    
     -- Figure environment should have only one paragraph for description
-    [Para inlines] = envDesc
-    label = "}\n\\label{fig:" <> envTag <> "}\n"
+    [Para inlinesAll] = envDesc
+    -- ugly hack to check the last two elements
+    image : SoftBreak : revInlines = reverse inlinesAll
+    inlines = reverse revInlines
+    caption = [RawInline "tex" "\n\\caption{"] ++ inlines ++ [RawInline "tex" "}\n"]
+
+    label = "\\label{fig:" <> envTag <> "}\n"
     envEndTex = label <> "\\end{figure}"
     envEnd = RawInline "tex" envEndTex
 latexProcessTheoremEnv TheoremEnv
