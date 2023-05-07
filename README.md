@@ -1,6 +1,6 @@
 # mathmd
 
-This is an opinionated program that transpiles an Obsidian vault to a single LaTeX file or an `mdbook` book. It aims to:
+This is an opinionated and niche program that transpiles an Obsidian vault to a single LaTeX file or an `mdbook` book. It aims to:
 - allow markdown to include LaTeX theorem/figure environment and references
 - and provide WYSIWYG experience in the Obsidian markdown editor.
 
