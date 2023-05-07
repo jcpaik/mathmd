@@ -5,7 +5,7 @@ This is an opinionated and niche program that transpiles an Obsidian vault to a 
 - and provide WYSIWYG experience in the Obsidian markdown editor.
 
 The code is mainly for myself to transpile a [draft](https://github.com/jcpaik/sofa-vault) of mine in Obsidian,
-so it is immature and not recommended for any general use as of now.
+so it is not recommended for any general use as of now.
 
 # Motivation
 
