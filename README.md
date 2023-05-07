@@ -43,9 +43,8 @@ The definitions are not precise and subject to change anytime.
 
 _Proof._ A _proof environment_ is simply a series of paragraphs, with the first letters of the first paragraph starting with `_Proof._`, and the last string of the last paragraph ending with the symbol `□` (&#9633). □
 
-> __Figure [sample].__ This is a sample figure. A figure environment should end with a single paragraph of image. ^fig-sample
-> 
-> ![70%](images/sample.jpeg)
+> __Figure [sample].__ This is a sample figure. A figure environment is followed by a single line of image link with no blockquote marker. ^fig-sample
+![70%](images/sample.jpeg)
 
 To refer to a theorem or figure environment, we use Obsidian's way to refer a block identifier like [[#^def-theorem-environment]] or [[#^fig-sample]].
 We only use double brackets `[[]]` for referencing environments.
