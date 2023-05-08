@@ -22,6 +22,45 @@ data TheoremEnvType =
   Theorem | Lemma | Definition | Corollary | Remark | FigureEnv
   deriving (Eq, Enum, Show)
 
+-- | Represents a single theorem environment similar to the one in LaTeX.
+data TheoremEnv = TheoremEnv
+    {
+      theoremEnvType        :: TheoremEnvType
+    , theoremEnvTag         :: Text
+    , theoremEnvDescription :: [Block]
+    }
+  deriving Show
+
+{- | A processor takes a tree of markdown files and its Pandoc markdown AST 
+and transpiles it to a target (e.g. LaTeX or mdbook).
+
+The order of transpilation is:
+1. Pre-process markdown file with `processPreprocess`
+2. Pandoc reader converts the file to a Pandoc AST
+3. Detects and converts theorem environment in AST
+4. Convert each inline (image, link, equation) of AST
+5. Write the final AST using a Pandoc writer
+-}
+data Processor = Processor
+    {
+      processPreprocess    :: Text -> Text
+    -- ^ Pre-processes each markdown file as text before being parsed by Pandoc.
+    , processEquation      :: MathType -> Text -> Inline
+    -- ^ Process each LaTeX equation
+    , processTheoremEnv    :: TheoremEnv -> [Block]
+    , processImage         :: Attr -> [Inline] -> Target -> Inline
+    , processLink          :: Attr -> [Inline] -> Target -> Inline
+    , processFile          :: Pandoc -> PandocIO Text
+    -- ^ Writes the converted AST using a Pandoc writer
+    , processDirectory     :: FileTree -> Maybe Text
+    -- ^ (Optionally) generates a file for each destination folder
+    , processSummary       :: FileTree -> FilePath -> IO ()
+    -- ^ Given the whole source file tree, generate some summary file
+    -- e.g. A `SUMMARY.md` file for mdbook, and a `main.tex` file for LaTex
+    , processExtension     :: String
+    -- ^ Extension of transpiled files
+    }
+
 theoremEnvTypeText :: TheoremEnvType -> Text
 theoremEnvTypeText t =
   case t of
@@ -53,14 +92,6 @@ parseTheoremEnvType text =
     "Remark" -> Just Remark
     "Figure" -> Just FigureEnv
     _ -> Nothing
-
-data TheoremEnv = TheoremEnv
-    {
-      theoremEnvType        :: TheoremEnvType
-    , theoremEnvTag         :: Text
-    , theoremEnvDescription :: [Block]
-    }
-  deriving Show
 
 -- "[some-thm-name]." -> Just "some-thm-name"
 parseTheoremEnvTag :: Text -> Maybe Text
@@ -108,24 +139,6 @@ theoremEnv (BlockQuote
         quoted = Para restFirstPara : restBlocks
         tagRemoved = walk clearTags quoted
 theoremEnv _ = Nothing
-
-data Processor = Processor
-    {
-      processPreprocess    :: Text -> Text
-    , processEquation      :: MathType -> Text -> Inline
-    , processTheoremEnv    :: TheoremEnv -> [Block]
-    , processImage         :: Attr -> [Inline] -> Target -> Inline
-    , processLink          :: Attr -> [Inline] -> Target -> Inline
-    -- Translate a .md file to corresponding file.
-    , processFile          :: Pandoc -> PandocIO Text
-    -- Translate a directory to a file. Gets dstTree.
-    , processDirectory     :: FileTree -> Maybe Text
-    -- Given the file tree, generate some summary file
-    -- For mdbook, a `SUMMARY.md` file
-    -- For LaTeX, a `main.tex` file
-    , processSummary       :: FileTree -> FilePath -> IO ()
-    , processExtension     :: String
-    }
 
 processPandoc :: Processor -> Pandoc -> Pandoc
 processPandoc (Processor {
