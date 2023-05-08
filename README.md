@@ -1,17 +1,20 @@
 # mathmd
 
-This is an opinionated and niche program that transpiles an Obsidian vault to a single LaTeX file or an `mdbook` book. It aims to:
+This is an opinionated small program in development that transpiles an Obsidian vault to a single LaTeX file or an `mdbook` book. It aims to:
 - allow markdown to include LaTeX theorem/figure environment and references
 - and provide WYSIWYG experience in the Obsidian markdown editor.
 
-The code is mainly for myself to transpile a [draft](https://github.com/jcpaik/sofa-vault) of mine in Obsidian,
-so it is not recommended for any general use as of now.
+The following video demonstrates the usage.
+
+https://user-images.githubusercontent.com/34874130/236930778-90f6f365-df12-4454-a8d1-7bfa126441a5.mp4
+
+The code is mainly for myself to transpile a [draft](https://github.com/jcpaik/sofa-vault) of mine. It has a lot of rough corners so it is not recommended for any general use as of now.
 
 # Motivation
 
 LaTeX takes too much mental space for drafting by requiring users to adhere to complicated syntax with no immediate feedback on how the result will look like.
 - [Typst](https://github.com/typst/typst) is a promising project, but as academy standard expects LaTeX files right now I can't use it immediately for my needs.
-- [Obsidian](https://obsidian.md/) is a nice markdown WYSIWYG editor that still giving the full control to users to edit the source file as-is even in WYSIWYG mode. But it does not support theorem environments natively.
+- [Obsidian](https://obsidian.md/) is a nice markdown what-you-see-is-what-you-mean editor that still gives the full control to users to edit the markdown file as-is. But it does not support LaTeX theorem environments natively.
 
 With this, I'm using Pandoc to transpile an Obsidian vault to a LaTeX project.
 
