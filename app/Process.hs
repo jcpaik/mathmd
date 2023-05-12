@@ -127,9 +127,7 @@ theoremEnv (BlockQuote
     restFirstPara) : restBlocks)) = do
       envType <- traceShowId $ parseTheoremEnvType typeStr
       envTag <- parseTheoremEnvTag nameStr
-      -- Reject any figure captions with more than single paragraph
-      if envType == FigureEnv && restBlocks /= [] then Nothing
-      else Just TheoremEnv
+      Just TheoremEnv
         {
           theoremEnvType = envType
         , theoremEnvTag = envTag
@@ -314,12 +312,12 @@ latexProcessTheoremEnv (TheoremEnv FigureEnv envTag envDesc) =
     envStartTex = "\\begin{figure}\n\\centering\n"
     envStart = RawInline "tex" envStartTex
     
-    -- Figure environment should have only one paragraph for description
-    [Para inlinesAll] = envDesc
-    -- ugly hack to check the last two elements
-    image : SoftBreak : revInlines = reverse inlinesAll
-    inlines = reverse revInlines
-    caption = [RawInline "tex" "\n\\caption{"] ++ inlines ++ [RawInline "tex" "}\n"]
+    -- Figure environment should have two paragraphs,
+    -- one for description and one for image
+    [Para inlines, Para [image@(Image _ _ _)]] = envDesc
+    caption = [RawInline "tex" "\n\\caption{"] ++ 
+      inlines ++ 
+      [RawInline "tex" "}\n"]
 
     label = "\\label{fig:" <> envTag <> "}\n"
     envEndTex = label <> "\\end{figure}"
@@ -338,7 +336,10 @@ latexProcessTheoremEnv TheoremEnv
     envEnd = Plain [RawInline "tex" envEndTex]
 
 latexProcessImage :: Attr -> [Inline] -> Target -> Inline
-latexProcessImage = Image
+latexProcessImage _ [Str attrStr] (path, "") = 
+  Image attr [] (path, "") where
+    attr = ( "" , [] , [ ( "width" , attrStr ) ] )
+latexProcessImage a i t = Image a i t
 
 latexProcessLink :: Attr -> [Inline] -> Target -> Inline
 -- For single-valued wikilinks, just make a smart link.
