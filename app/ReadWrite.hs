@@ -9,6 +9,8 @@ import qualified Data.Text.IO as TIO
 readerOptions :: ReaderOptions
 readerOptions = def {
   readerExtensions = extensionsFromList [
+    Ext_fancy_lists,
+    -- ^ upper/lower/Roman numerals
     Ext_tex_math_dollars,
     Ext_raw_html,
     Ext_raw_tex,
