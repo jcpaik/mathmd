@@ -356,6 +356,10 @@ latexProcessLink attr desc (target, "wikilink") |
       thmTypeText = theoremEnvTypeText envType
       thmRefText = theoremEnvTypeTagText envType <> ":" <> envName in
       RawInline "tex" $ stringify desc <> " (\\Cref{" <> thmRefText <> "})"
+-- For single-valued wikilinks starting with a single at-symbol, use cite.
+latexProcessLink attr desc (target, "wikilink") |
+  stringify desc == target && T.head target == '@' =
+    RawInline "tex" $ "\\cite{" <> T.tail target <> "}"
 -- Leave rest intact
 latexProcessLink attr desc target = Link attr desc target
 
