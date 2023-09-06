@@ -19,7 +19,7 @@ import Data.List (sortOn)
 import Text.Pandoc.Shared (stringify)
 
 data TheoremEnvType =
-  Theorem | Lemma | Definition | Corollary | Remark | FigureEnv
+  Theorem | Lemma | Definition | Corollary | Conjecture | Remark | FigureEnv
   deriving (Eq, Enum, Show)
 
 -- | Represents a single theorem environment similar to the one in LaTeX.
@@ -68,6 +68,7 @@ theoremEnvTypeText t =
     Lemma -> "Lemma"
     Definition -> "Definition"
     Corollary -> "Corollary"
+    Conjecture -> "Conjecture"
     Remark -> "Remark"
     FigureEnv -> "Figure"
 
@@ -78,6 +79,7 @@ theoremEnvTypeTagText t =
     Lemma -> "lem"
     Definition -> "def"
     Corollary -> "cor"
+    Conjecture -> "con"
     Remark -> "rem"
     FigureEnv -> "fig"
 
@@ -89,6 +91,7 @@ parseTheoremEnvType text =
     "Lemma" -> Just Lemma
     "Definition" -> Just Definition
     "Corollary" -> Just Corollary
+    "Conjecture"-> Just Conjecture
     "Remark" -> Just Remark
     "Figure" -> Just FigureEnv
     _ -> Nothing
@@ -111,6 +114,7 @@ parseTheoremEnvLink text =
         "lem-" -> Lemma
         "def-" -> Definition
         "cor-" -> Corollary
+        "con-" -> Conjecture
         "rem-" -> Remark
         "fig-" -> FigureEnv
 
@@ -219,6 +223,7 @@ mdBookTheoremEnvTypeText t =
     Lemma -> "Lemma"
     Definition -> "Definition"
     Corollary -> "Corollary"
+    Conjecture -> "Conjecture"
     Remark -> "Remark"
     FigureEnv -> "Figure"
 
@@ -292,6 +297,7 @@ latexTheoremEnvTypeName t =
     Lemma -> "lemma"
     Definition -> "definition"
     Corollary -> "corollary"
+    Conjecture -> "conjecture"
     Remark -> "remark"
     FigureEnv -> "figure"
 
@@ -302,6 +308,7 @@ latexTheoremEnvTypeHeader t =
     Lemma -> "lem:"
     Definition -> "def:"
     Corollary -> "cor:"
+    Conjecture -> "con:"
     Remark -> "rem:"
     FigureEnv -> "fig:"
 
