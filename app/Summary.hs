@@ -1,6 +1,6 @@
 module Summary where
 import FileTree
-import Data.Char (isDigit)
+import Data.Char (isDigit, isAsciiUpper)
 import Data.List (isSuffixOf)
 import System.FilePath ((</>), takeFileName, dropExtension)
 import Data.Text (Text)
@@ -12,6 +12,7 @@ import Network.URI.Encode (encodeTextWith)
 indexed :: FilePath -> Bool
 indexed x = indexed' (takeFileName x) where
   indexed' (d0 : d1 : '.' : ' ' : _) | isDigit d0 && isDigit d1 = True
+  indexed' (d0 : d1 : '.' : ' ' : _) | isAsciiUpper d0 && isDigit d1 = True
   indexed' _ = False
 
 isMarkdown :: FilePath -> Bool

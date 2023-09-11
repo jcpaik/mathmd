@@ -17,6 +17,7 @@ import Data.List (isPrefixOf)
 import Data.List (isSuffixOf)
 import Data.List (sortOn)
 import Text.Pandoc.Shared (stringify)
+import Data.Char (isAlpha, isAsciiUpper)
 
 data TheoremEnvType =
   Theorem | Lemma | Definition | Corollary | Conjecture | Remark | FigureEnv
@@ -318,12 +319,12 @@ latexProcessTheoremEnv (TheoremEnv FigureEnv envTag envDesc) =
   [Para $ [envStart] ++ [image] ++ caption ++ [envEnd]] where
     envStartTex = "\\begin{figure}\n\\centering\n"
     envStart = RawInline "tex" envStartTex
-    
+
     -- Figure environment should have two paragraphs,
     -- one for description and one for image
     [Para inlines, Para [image@(Image _ _ _)]] = envDesc
-    caption = [RawInline "tex" "\n\\caption{"] ++ 
-      inlines ++ 
+    caption = [RawInline "tex" "\n\\caption{"] ++
+      inlines ++
       [RawInline "tex" "}\n"]
 
     label = "\\label{fig:" <> envTag <> "}\n"
@@ -343,7 +344,7 @@ latexProcessTheoremEnv TheoremEnv
     envEnd = Plain [RawInline "tex" envEndTex]
 
 latexProcessImage :: Attr -> [Inline] -> Target -> Inline
-latexProcessImage _ [Str attrStr] (path, "") = 
+latexProcessImage _ [Str attrStr] (path, "") =
   Image attr [] (path, "") where
     attr = ( "" , [] , [ ( "width" , attrStr ) ] )
 latexProcessImage a i t = Image a i t
@@ -391,12 +392,27 @@ latexProcessFile pd = writeLaTeX options mpd where
 latexSections :: [Text]
 latexSections = ["chapter", "section", "subsection", "subsubsection"]
 
+-- File name to the corresponding line in latex
+-- `00. something.tex` => `\\input{00. something.tex}`
+-- `AA/BB/03. something.tex` => `\\subsection{something}\n\\input{AA/BB/03. something.tex}`
+
+latexLineOfFile :: String -> Text
+-- Zero indexed -> no header
+latexLineOfFile p | "00. " `isPrefixOf` p = "\\input{" <> T.pack p <> "}"
+-- TODO: change subsection to something according to depth
+latexLineOfFile p = 
+  let 
+    sectionName = latexSections !! (length (splitPath p) - 1) 
+    sectionTitle = T.drop 4 $ T.pack (takeBaseName p)
+  in
+    "\\" <> sectionName <> "{" <> sectionTitle <> "}\n\\input{" <> T.pack p <> "}"
+
 latexProcessDirectory :: FileTree -> Maybe Text
 latexProcessDirectory (Directory dirPath children) = Just $
   T.unlines l where
     childPaths = filter (isSuffixOf ".tex") $ map filePath children
-    lineOf p | "00. " `isPrefixOf` p = "\\input{" <> T.pack p <> "}"
-    -- TODO: change subsection to something according to depth
-    lineOf p = let sectionName = latexSections !! (length (splitPath p) - 1) in
-      "\\" <> sectionName <> "{" <> (T.drop 4 $ T.pack (takeBaseName p)) <> "}\n\\input{" <> T.pack p <> "}"
-    l = map lineOf childPaths
+    isAppendixPath p = isAsciiUpper $ head (takeBaseName p)
+    (sectionPaths, appendixPaths) = break isAppendixPath childPaths
+    l = map latexLineOfFile sectionPaths ++
+      if null appendixPaths then []
+      else "\\appendix" : map latexLineOfFile appendixPaths
