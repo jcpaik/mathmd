@@ -20,7 +20,8 @@ import Text.Pandoc.Shared (stringify)
 import Data.Char (isAlpha, isAsciiUpper)
 
 data TheoremEnvType =
-  Theorem | Lemma | Definition | Corollary | Conjecture | Remark | FigureEnv
+  Theorem | Lemma | Definition | Corollary | 
+  Conjecture | Remark | Proposition | FigureEnv
   deriving (Eq, Enum, Show)
 
 -- | Represents a single theorem environment similar to the one in LaTeX.
@@ -71,6 +72,7 @@ theoremEnvTypeText t =
     Corollary -> "Corollary"
     Conjecture -> "Conjecture"
     Remark -> "Remark"
+    Proposition -> "Proposition"
     FigureEnv -> "Figure"
 
 theoremEnvTypeTagText :: TheoremEnvType -> Text
@@ -82,6 +84,7 @@ theoremEnvTypeTagText t =
     Corollary -> "cor"
     Conjecture -> "con"
     Remark -> "rem"
+    Proposition -> "pro"
     FigureEnv -> "fig"
 
 -- "Theorem" -> Just Theorem
@@ -94,6 +97,7 @@ parseTheoremEnvType text =
     "Corollary" -> Just Corollary
     "Conjecture"-> Just Conjecture
     "Remark" -> Just Remark
+    "Proposition" -> Just Proposition
     "Figure" -> Just FigureEnv
     _ -> Nothing
 
@@ -117,6 +121,7 @@ parseTheoremEnvLink text =
         "cor-" -> Corollary
         "con-" -> Conjecture
         "rem-" -> Remark
+        "pro-" -> Proposition
         "fig-" -> FigureEnv
 
 clearTags :: [Inline] -> [Inline]
@@ -226,6 +231,7 @@ mdBookTheoremEnvTypeText t =
     Corollary -> "Corollary"
     Conjecture -> "Conjecture"
     Remark -> "Remark"
+    Proposition -> "Proposition"
     FigureEnv -> "Figure"
 
 mdBookProcessTheoremEnv :: TheoremEnv -> [Block]
@@ -300,6 +306,7 @@ latexTheoremEnvTypeName t =
     Corollary -> "corollary"
     Conjecture -> "conjecture"
     Remark -> "remark"
+    Proposition -> "proposition"
     FigureEnv -> "figure"
 
 latexTheoremEnvTypeHeader :: TheoremEnvType -> Text
@@ -311,6 +318,7 @@ latexTheoremEnvTypeHeader t =
     Corollary -> "cor:"
     Conjecture -> "con:"
     Remark -> "rem:"
+    Proposition -> "pro:"
     FigureEnv -> "fig:"
 
 latexProcessTheoremEnv :: TheoremEnv -> [Block]
