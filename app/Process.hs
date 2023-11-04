@@ -21,7 +21,7 @@ import Data.Char (isAlpha, isAsciiUpper)
 
 data TheoremEnvType =
   Theorem | Lemma | Definition | Corollary | 
-  Conjecture | Remark | Proposition | FigureEnv
+  Conjecture | Remark | Proposition | FigureEnv | EquationEnv
   deriving (Eq, Enum, Show)
 
 -- | Represents a single theorem environment similar to the one in LaTeX.
@@ -86,6 +86,7 @@ theoremEnvTypeTagText t =
     Remark -> "rem"
     Proposition -> "pro"
     FigureEnv -> "fig"
+    EquationEnv -> "eqn"
 
 -- "Theorem" -> Just Theorem
 parseTheoremEnvType :: Text -> Maybe TheoremEnvType
@@ -123,6 +124,7 @@ parseTheoremEnvLink text =
         "rem-" -> Remark
         "pro-" -> Proposition
         "fig-" -> FigureEnv
+        "eqn-" -> EquationEnv
 
 clearTags :: [Inline] -> [Inline]
 clearTags [] = []
@@ -164,8 +166,14 @@ processPandoc (Processor {
 
     blockWalker blocks = [outBlock |
       block <- blocks, outBlock <- expandBlock block]
+    -- this function expands a single block to a series of blocks
+    -- right now it sees if a block is an theorem environment,
+    -- and if so turns that into a series of blocks
     expandBlock block = maybe [block]
       procTheoremEnv (theoremEnv block)
+    -- to parse equations, we need to sniff [Inline] and
+    -- handle things in that level
+    -- https://hackage.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Walk.html#v:walk
 
 processFileWithPreprocess :: Processor -> Text -> IO Text
 processFileWithPreprocess processor text =
@@ -308,6 +316,7 @@ latexTheoremEnvTypeName t =
     Remark -> "remark"
     Proposition -> "proposition"
     FigureEnv -> "figure"
+    EquationEnv -> "equation"
 
 latexTheoremEnvTypeHeader :: TheoremEnvType -> Text
 latexTheoremEnvTypeHeader t =
@@ -320,6 +329,7 @@ latexTheoremEnvTypeHeader t =
     Remark -> "rem:"
     Proposition -> "pro:"
     FigureEnv -> "fig:"
+    EquationEnv -> "eqn:"
 
 latexProcessTheoremEnv :: TheoremEnv -> [Block]
 -- Handle figures separately
