@@ -150,13 +150,50 @@ theoremEnv (BlockQuote
         tagRemoved = walk clearTags quoted
 theoremEnv _ = Nothing
 
+-- detects latex environments (align, equation, gather, etc.)
+-- that is wrongly trapped inside $$'s due to Obsidian
+trappedEnvNames :: [Text]
+trappedEnvNames = ["align", "align*", "equation", "equation*", "gather", "gather*"]
+
+-- note that there are other envs (bmatrix, aligned, etc.) that should be in equation
+isTrappedEnv :: Text -> Bool
+isTrappedEnv math =
+  let math' = T.strip math in
+  or [T.isPrefixOf ("\\begin{" <> envName <> "}") math' | envName <- trappedEnvNames]
+
+injectTagToEquation :: Text -> Text -> Inline
+injectTagToEquation tag math | isTrappedEnv math =
+  let
+    hd : tl = T.lines math
+    newMath = T.unlines ("" : hd : ("\\label{eqn:" <> tag <> "}") : tl)
+  in
+    RawInline "tex" newMath
+injectTagToEquation tag math =
+  let
+    header = "\\begin{equation}"
+    tagLine = "\\label{eqn:" <> tag <> "}"
+    footer = "\\end{equation}"
+    newMath = T.unlines ["", header, tagLine, math, footer]
+  in
+    RawInline "tex" newMath
+
+addEquationTag :: [Inline] -> [Inline]
+addEquationTag (Space : Str tag : SoftBreak : Math DisplayMath math : tl) |
+  T.isPrefixOf "^eqn-" tag =
+    injectTagToEquation (T.drop 5 tag) (T.strip math) : addEquationTag tl
+addEquationTag (hd : tl) = hd : addEquationTag tl
+addEquationTag [] = []
+
 processPandoc :: Processor -> Pandoc -> Pandoc
 processPandoc (Processor {
     processEquation = procEq
   , processImage = procImg
   , processLink = procLink
   , processTheoremEnv = procTheoremEnv }) =
-  walk inlineWalker . walk blockWalker where
+  walk inlineWalker . walk eqnTagWalker . walk blockWalker where
+    eqnTagWalker :: Block -> Block
+    eqnTagWalker = walk addEquationTag
+
     inlineWalker (Math t txt) = procEq t txt
     inlineWalker (Image attr desc target) =
       procImg attr desc target
@@ -299,10 +336,8 @@ latexProcessor = Processor
   }
 
 latexProcessEquation :: MathType -> Text -> Inline
--- fall back to raw inline if the equation has any \begin{ - \end{ inside
 latexProcessEquation DisplayMath txt |
-  T.isInfixOf "\\begin{" txt && T.isInfixOf "\\end{" txt =
-    RawInline "latex" txt
+  isTrappedEnv txt = RawInline "tex" txt
 latexProcessEquation mt t = Math mt t
 
 latexTheoremEnvTypeName :: TheoremEnvType -> Text
@@ -418,9 +453,9 @@ latexLineOfFile :: String -> Text
 -- Zero indexed -> no header
 latexLineOfFile p | "00. " `isPrefixOf` p = "\\input{" <> T.pack p <> "}"
 -- TODO: change subsection to something according to depth
-latexLineOfFile p = 
-  let 
-    sectionName = latexSections !! (length (splitPath p) - 1) 
+latexLineOfFile p =
+  let
+    sectionName = latexSections !! (length (splitPath p) - 1)
     sectionTitle = T.drop 4 $ T.pack (takeBaseName p)
   in
     "\\" <> sectionName <> "{" <> sectionTitle <> "}\n\\input{" <> T.pack p <> "}"
