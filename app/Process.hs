@@ -12,7 +12,7 @@ import Debug.Trace (trace, traceShow, traceShowId)
 import Data.Maybe (isJust)
 import FileTree
 import Summary
-import System.FilePath ((</>), replaceExtension, takeBaseName, splitPath)
+import System.FilePath ((</>), replaceExtension, takeBaseName, takeFileName, dropExtension, takeDirectory, splitDirectories)
 import Data.List (isPrefixOf)
 import Data.List (isSuffixOf)
 import Data.List (sortOn)
@@ -405,26 +405,30 @@ latexProcessImage _ [Str attrStr] (path, "") =
 latexProcessImage a i t = Image a i t
 
 latexProcessLink :: Attr -> [Inline] -> Target -> Inline
--- For single-valued wikilinks, just make a smart link.
+-- [[target]]
 latexProcessLink attr desc (target, "wikilink") |
-  stringify desc == target && isJust (parseTheoremEnvLink target) =
-  let Just (path, envType, envName) = parseTheoremEnvLink target
+  stringify desc == target =
+    latexProcessSingleLink target
+-- [[target|desc]]
+latexProcessLink attr desc (target, "wikilink") =
+  RawInline "tex" $ stringify desc <>
+  " (" <> stringify (latexProcessSingleLink target) <> ")"
+-- Leave rest intact
+latexProcessLink attr desc target = Link attr desc target
+
+latexProcessSingleLink :: Text -> Inline
+-- [[#^thm-something]]
+latexProcessSingleLink link | isJust (parseTheoremEnvLink link) =
+  let Just (path, envType, envName) = parseTheoremEnvLink link
       thmTypeText = theoremEnvTypeText envType
       thmRefText = theoremEnvTypeTagText envType <> ":" <> envName in
       RawInline "tex" $ "\\Cref{" <> thmRefText <> "}"
--- For wikilinks with title, do "title (reference)"
-latexProcessLink attr desc (target, "wikilink") |
-  isJust (parseTheoremEnvLink target) =
-  let Just (path, envType, envName) = parseTheoremEnvLink target
-      thmTypeText = theoremEnvTypeText envType
-      thmRefText = theoremEnvTypeTagText envType <> ":" <> envName in
-      RawInline "tex" $ stringify desc <> " (\\Cref{" <> thmRefText <> "})"
--- For single-valued wikilinks starting with a single at-symbol, use cite.
-latexProcessLink attr desc (target, "wikilink") |
-  stringify desc == target && T.head target == '@' =
-    RawInline "tex" $ "\\cite{" <> T.tail target <> "}"
--- Leave rest intact
-latexProcessLink attr desc target = Link attr desc target
+-- [[@citation]]
+latexProcessSingleLink link | T.head link == '@' =
+  RawInline "tex" $ "\\cite{" <> T.tail link <> "}"
+-- [[filename.md]] or [[filename]]
+latexProcessSingleLink link =
+  RawInline "tex" $ "\\Cref{" <> latexLabelOfFile (T.unpack link) <> "}"
 
 latexProcessFile :: Pandoc -> PandocIO Text
 latexProcessFile pd = writeLaTeX options mpd where
@@ -447,24 +451,45 @@ latexProcessFile pd = writeLaTeX options mpd where
 latexSections :: [Text]
 latexSections = ["chapter", "section", "subsection", "subsubsection"]
 
+-- `01. Section Title/00. Preface.md` => `section-title`
+-- `01. Section Title/00. Preface` => `section-title`
+-- `01. Section Title/01. Subsection Title.md` => `subsection-title`
+-- `01. Section Title/01. Subsection Title` => `subsection-title`
+-- TODO: come up with a better labeling strategy
+latexLabelOfFile :: String -> Text
+latexLabelOfFile p =
+  let
+    path = takeFileName $ dropPreface p
+    makeTitle t = T.replace " " "-" (T.toLower $ T.drop 4 $ T.pack t)
+  in
+    "sec:" <> makeTitle path
+
+dropPreface :: String -> String
+dropPreface p
+  | "00. " `isPrefixOf` takeBaseName p = takeDirectory p
+  | ".tex" `isSuffixOf` p || ".md" `isSuffixOf` p = dropExtension p
+  | otherwise = p
+
 -- File name to the corresponding line in latex
 -- `00. something.tex` => `\\input{00. something.tex}`
 -- `AA/BB/03. something.tex` => `\\subsection{something}\n\\input{AA/BB/03. something.tex}`
 
 latexLineOfFile :: String -> Text
 -- Zero indexed -> no header
-latexLineOfFile p | "00. " `isPrefixOf` takeBaseName p = "\\input{" <> T.pack p <> "}"
--- TODO: change subsection to something according to depth
 latexLineOfFile p =
   let
-    sectionName = latexSections !! (length (splitPath p) - 1)
+    sectionName = latexSections !! (length (splitDirectories p) - 1)
     sectionTitle = T.drop 4 $ T.pack (takeBaseName p)
     sectionHeader = ("\\" <> sectionName <> "{" <> sectionTitle <> "}" :: Text)
-    sectionTag = T.replace " " "-" (T.toLower sectionTitle)
-    sectionLabel = ("\\label{sec:" <> sectionTag <> "}" :: Text)
+
+    sectionTag = latexLabelOfFile p
+    -- TODO: change label head according to section/subsection/etc.
+    sectionLabel = ("\\label{" <> sectionTag <> "}" :: Text)
     sectionInput = ("\\input{" <> T.pack p <> "}" :: Text)
   in
-    T.unlines [sectionHeader, sectionLabel, sectionInput]
+    if "00. " `isPrefixOf` takeBaseName p
+      then sectionInput
+      else T.unlines [sectionHeader, sectionLabel, sectionInput]
 
 latexProcessDirectory :: FileTree -> Maybe Text
 latexProcessDirectory (Directory dirPath children) = Just $
