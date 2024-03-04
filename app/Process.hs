@@ -20,7 +20,7 @@ import Text.Pandoc.Shared (stringify)
 import Data.Char (isAlpha, isAsciiUpper)
 
 data TheoremEnvType =
-  Theorem | Lemma | Definition | Corollary | 
+  Theorem | Lemma | Definition | Corollary |
   Conjecture | Remark | Proposition | FigureEnv | EquationEnv
   deriving (Eq, Enum, Show)
 
@@ -110,21 +110,23 @@ parseTheoremEnvTag = T.stripPrefix "[" >=> T.stripSuffix "]."
 -- "05. Definitions/asdf/asdf#^thm-asdf" -> ("05. Definitions/asdf/asdf", Theorem, "asdf")
 parseTheoremEnvLink :: Text -> Maybe (Text, TheoremEnvType, Text)
 parseTheoremEnvLink text =
-  if length tokens /= 2 then Nothing else
-    Just (addr, thmType, tagBody) where
-      tokens = T.splitOn "#^" text
-      [addr, tag] = tokens
-      (tagHead, tagBody) = T.splitAt 4 tag
-      thmType = case tagHead of
-        "thm-" -> Theorem
-        "lem-" -> Lemma
-        "def-" -> Definition
-        "cor-" -> Corollary
-        "con-" -> Conjecture
-        "rem-" -> Remark
-        "pro-" -> Proposition
-        "fig-" -> FigureEnv
-        "eqn-" -> EquationEnv
+  if length tokens /= 2 then Nothing else do
+      thmType <- thmTypeMaybe
+      return (addr, thmType, tagBody) where
+        tokens = T.splitOn "#^" text
+        [addr, tag] = tokens
+        (tagHead, tagBody) = T.splitAt 4 tag
+        thmTypeMaybe = case tagHead of
+          "thm-" -> Just Theorem
+          "lem-" -> Just Lemma
+          "def-" -> Just Definition
+          "cor-" -> Just Corollary
+          "con-" -> Just Conjecture
+          "rem-" -> Just Remark
+          "pro-" -> Just Proposition
+          "fig-" -> Just FigureEnv
+          "eqn-" -> Just EquationEnv
+          _ -> Nothing
 
 clearTags :: [Inline] -> [Inline]
 clearTags [] = []
@@ -451,14 +453,18 @@ latexSections = ["chapter", "section", "subsection", "subsubsection"]
 
 latexLineOfFile :: String -> Text
 -- Zero indexed -> no header
-latexLineOfFile p | "00. " `isPrefixOf` p = "\\input{" <> T.pack p <> "}"
+latexLineOfFile p | "00. " `isPrefixOf` takeBaseName p = "\\input{" <> T.pack p <> "}"
 -- TODO: change subsection to something according to depth
 latexLineOfFile p =
   let
     sectionName = latexSections !! (length (splitPath p) - 1)
     sectionTitle = T.drop 4 $ T.pack (takeBaseName p)
+    sectionHeader = ("\\" <> sectionName <> "{" <> sectionTitle <> "}" :: Text)
+    sectionTag = T.replace " " "-" (T.toLower sectionTitle)
+    sectionLabel = ("\\label{sec:" <> sectionTag <> "}" :: Text)
+    sectionInput = ("\\input{" <> T.pack p <> "}" :: Text)
   in
-    "\\" <> sectionName <> "{" <> sectionTitle <> "}\n\\input{" <> T.pack p <> "}"
+    T.unlines [sectionHeader, sectionLabel, sectionInput]
 
 latexProcessDirectory :: FileTree -> Maybe Text
 latexProcessDirectory (Directory dirPath children) = Just $
