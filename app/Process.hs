@@ -466,7 +466,7 @@ latexLabelOfFile p =
 
 dropPreface :: String -> String
 dropPreface p
-  | "00. " `isPrefixOf` takeBaseName p = takeDirectory p
+  | "00. " `isPrefixOf` takeFileName p = takeDirectory p
   | ".tex" `isSuffixOf` p || ".md" `isSuffixOf` p = dropExtension p
   | otherwise = p
 
