@@ -16,7 +16,8 @@ readerOptions = def {
     Ext_raw_tex,
     Ext_strikeout,
     Ext_wikilinks_title_after_pipe,
-    Ext_footnotes
+    Ext_footnotes,
+    Ext_smart
   ]
 }
 
