@@ -441,12 +441,25 @@ latexProcessFile pd = writeLaTeX options mpd where
     ],
     writerWrapText = WrapPreserve
   }
-  mpd = walk modHeader (walk modProof pd)
-  modHeader (Header n t xs) = (Header (n+2) t xs)
+  mpd = walk modHeader $ walk modProof $ walk modProofOption pd
+  modHeader (Header n t xs) = Header (n+2) t xs
   modHeader x = x
   modProof (Emph [Str "Proof."]) = RawInline "tex" "\\begin{proof}\n"
   modProof (Str "□") = RawInline "tex" "\n\\end{proof}"
   modProof x = x
+  modProofOption x@(Emph [Str "Proof."] : Space : Str "(of" : rest) =
+    let
+      isClosingInline (Str str) = T.last str == ')'
+      isClosingInline _ = False
+      (inBracket, outBracket) = break isClosingInline rest
+    in
+      case outBracket of
+        (Str str : Space : other) ->
+          [RawInline "tex" "\\begin{proof}[Proof of"] ++
+          inBracket ++ [Str (T.init str)] ++
+          [RawInline "tex" "]\n"] ++ other
+        _ -> x
+  modProofOption x = x
 
 latexSections :: [Text]
 latexSections = ["chapter", "section", "subsection", "subsubsection"]
