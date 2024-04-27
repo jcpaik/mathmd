@@ -439,6 +439,7 @@ latexProcessFile pd = writeLaTeX options mpd where
       Ext_raw_tex,
       Ext_strikeout
     ],
+    writerCiteMethod = Biblatex,
     writerWrapText = WrapPreserve
   }
   mpd = walk modHeader $ walk modProof $ walk modProofOption pd
