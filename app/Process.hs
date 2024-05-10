@@ -492,7 +492,7 @@ latexLineOfFile :: String -> Text
 -- Zero indexed -> no header
 latexLineOfFile p =
   let
-    sectionName = latexSections !! (length (splitDirectories p) - 1)
+    sectionName = latexSections !! (length (splitDirectories p) - 2)
     sectionTitle = T.drop 4 $ T.pack (takeBaseName p)
     sectionHeader = ("\\" <> sectionName <> "{" <> sectionTitle <> "}" :: Text)
 
