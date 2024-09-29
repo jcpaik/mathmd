@@ -399,9 +399,15 @@ latexProcessTheoremEnv TheoremEnv
     envEnd = Plain [RawInline "tex" envEndTex]
 
 latexProcessImage :: Attr -> [Inline] -> Target -> Inline
-latexProcessImage _ [Str attrStr] (path, "") =
+latexProcessImage _ [Str attrStr] (path, "") |
+  T.last attrStr == '%' =
   Image attr [] (path, "") where
     attr = ( "" , [] , [ ( "width" , attrStr ) ] )
+-- Change .svg file to .pdf file if there is no size specification
+latexProcessImage _ _ (path, "") |
+  T.takeEnd 4 path == ".svg" =
+  Image attr [] (T.dropEnd 4 path <> ".pdf", "") where
+    attr = ( "" , [] , [] )
 latexProcessImage a i t = Image a i t
 
 latexProcessLink :: Attr -> [Inline] -> Target -> Inline
