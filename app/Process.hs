@@ -449,7 +449,7 @@ latexProcessFile pd = writeLaTeX options mpd where
     writerWrapText = WrapPreserve
   }
   mpd = walk modHeader $ walk modProof $ walk modProofOption pd
-  modHeader (Header n t xs) = Header (n+2) t xs
+  modHeader (Header n t xs) = Header n t xs
   modHeader x = x
   modProof (Emph [Str "Proof."]) = RawInline "tex" "\\begin{proof}\n"
   modProof (Str "□") = RawInline "tex" "\n\\end{proof}"
@@ -498,7 +498,7 @@ latexLineOfFile :: String -> Text
 -- Zero indexed -> no header
 latexLineOfFile p =
   let
-    sectionName = latexSections !! (length (splitDirectories p) - 1)
+    sectionName = latexSections !! (length (splitDirectories p) - 2)
     sectionTitle = T.drop 4 $ T.pack (takeBaseName p)
     sectionHeader = ("\\" <> sectionName <> "{" <> sectionTitle <> "}" :: Text)
 
