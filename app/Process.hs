@@ -449,7 +449,7 @@ latexProcessFile pd = writeLaTeX options mpd where
     writerWrapText = WrapPreserve
   }
   mpd = walk modHeader $ walk modProof $ walk modProofOption pd
-  modHeader (Header n t xs) = Header n t xs
+  modHeader (Header n t xs) = Header (n+2) t xs
   modHeader x = x
   modProof (Emph [Str "Proof."]) = RawInline "tex" "\\begin{proof}\n"
   modProof (Str "□") = RawInline "tex" "\n\\end{proof}"
