@@ -155,7 +155,13 @@ theoremEnv _ = Nothing
 -- detects latex environments (align, equation, gather, etc.)
 -- that is wrongly trapped inside $$'s due to Obsidian
 trappedEnvNames :: [Text]
-trappedEnvNames = ["align", "align*", "equation", "equation*", "gather", "gather*"]
+trappedEnvNames = [
+    "align", "align*",
+    "equation", "equation*",
+    "gather", "gather*",
+    "alignat", "alignat*",
+    "alignedat", "alignedat*"
+  ]
 
 -- note that there are other envs (bmatrix, aligned, etc.) that should be in equation
 isTrappedEnv :: Text -> Bool
