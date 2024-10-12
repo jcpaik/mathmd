@@ -159,8 +159,7 @@ trappedEnvNames = [
     "align", "align*",
     "equation", "equation*",
     "gather", "gather*",
-    "alignat", "alignat*",
-    "alignedat", "alignedat*"
+    "alignat", "alignat*"
   ]
 
 -- note that there are other envs (bmatrix, aligned, etc.) that should be in equation
@@ -345,7 +344,7 @@ latexProcessor = Processor
 
 latexProcessEquation :: MathType -> Text -> Inline
 latexProcessEquation DisplayMath txt |
-  isTrappedEnv txt = RawInline "tex" txt
+  isTrappedEnv txt = RawInline "tex" $ T.strip txt
 latexProcessEquation mt t = Math mt t
 
 latexTheoremEnvTypeName :: TheoremEnvType -> Text
