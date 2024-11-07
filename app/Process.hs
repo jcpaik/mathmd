@@ -504,7 +504,7 @@ latexLineOfFile :: String -> Text
 latexLineOfFile p =
   let
     sectionName = latexSections !! (length (splitDirectories p) - 2)
-    sectionTitle = T.drop 4 $ T.pack (takeBaseName p)
+    sectionTitle = T.dropWhile (\c -> c == '_' || c == ' ') $ T.drop 4 $ T.pack (takeBaseName p)
     sectionHeader = ("\\" <> sectionName <> "{" <> sectionTitle <> "}" :: Text)
 
     sectionTag = latexLabelOfFile p
