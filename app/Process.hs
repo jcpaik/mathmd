@@ -496,7 +496,7 @@ latexLineOfFile p =
   let
     sectionName = latexSections !! (length (splitDirectories p) - 2)
     sectionTitle =
-        T.replace " Q" " $\\mathcal{Q}$" $ -- hack for one document
+        T.replace " Q" " $\\texorpdfstring{\\mathcal{Q}}{Q}$" $ -- hack for one document
         T.dropWhile (\c -> c == '_' || c == ' ') $
         T.drop 4 $
         T.pack (takeBaseName p)
