@@ -197,27 +197,18 @@ processPandoc (Processor {
   , processImage = procImg
   , processLink = procLink
   , processTheoremEnv = procTheoremEnv }) =
-  walk inlineWalker . walk eqnTagWalker . walk blockWalker where
-    eqnTagWalker :: Block -> Block
-    eqnTagWalker = walk addEquationTag
-
-    inlineWalker (Math t txt) = procEq t txt
-    inlineWalker (Image attr desc target) =
+  walk procInlines . walk addEquationTag . walk blockWalker where
+    procInlines (Math t txt) = procEq t txt
+    procInlines (Image attr desc target) =
       procImg attr desc target
-    inlineWalker (Link attr desc target) =
+    procInlines (Link attr desc target) =
       procLink attr desc target
-    inlineWalker x = x
+    procInlines x = x
 
     blockWalker blocks = [outBlock |
       block <- blocks, outBlock <- expandBlock block]
-    -- this function expands a single block to a series of blocks
-    -- right now it sees if a block is an theorem environment,
-    -- and if so turns that into a series of blocks
     expandBlock block = maybe [block]
       procTheoremEnv (theoremEnv block)
-    -- to parse equations, we need to sniff [Inline] and
-    -- handle things in that level
-    -- https://hackage.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Walk.html#v:walk
 
 processFileWithPreprocess :: Processor -> Text -> IO Text
 processFileWithPreprocess processor text =
@@ -504,7 +495,11 @@ latexLineOfFile :: String -> Text
 latexLineOfFile p =
   let
     sectionName = latexSections !! (length (splitDirectories p) - 2)
-    sectionTitle = T.dropWhile (\c -> c == '_' || c == ' ') $ T.drop 4 $ T.pack (takeBaseName p)
+    sectionTitle =
+        T.replace " Q" " $\\mathcal{Q}$" $ -- hack for one document
+        T.dropWhile (\c -> c == '_' || c == ' ') $
+        T.drop 4 $
+        T.pack (takeBaseName p)
     sectionHeader = ("\\" <> sectionName <> "{" <> sectionTitle <> "}" :: Text)
 
     sectionTag = latexLabelOfFile p
