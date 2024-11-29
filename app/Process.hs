@@ -61,6 +61,8 @@ data Processor = Processor
     -- e.g. A `SUMMARY.md` file for mdbook, and a `main.tex` file for LaTex
     , processExtension     :: String
     -- ^ Extension of transpiled files
+    , processPostprocess   :: Text -> Text
+    -- ^ Make modifications to the very final output
     }
 
 theoremEnvTypeText :: TheoremEnvType -> Text
@@ -214,8 +216,10 @@ processFileWithPreprocess :: Processor -> Text -> IO Text
 processFileWithPreprocess processor text =
   let filtered = processPreprocess processor text in runIOorExplode (do
     readPandoc <- readText filtered
-    let writePandoc = processPandoc processor readPandoc in
-      processFile processor writePandoc)
+    let writePandoc = processPandoc processor readPandoc
+        writeOutput = processFile processor writePandoc
+        postprocess = processPostprocess processor in
+      fmap postprocess writeOutput)
 
 processFileTree :: Processor -> FileTree -> FilePath -> IO ()
 processFileTree processor (File filePath) dst = do
@@ -253,6 +257,7 @@ mdBookProcessor = Processor
   , processDirectory = const Nothing
   , processSummary = mdBookProcessSummary
   , processExtension = ".md"
+  , processPostprocess = id
   }
 
 -- mdbook only understands things well when all the characters are escaped
@@ -331,6 +336,7 @@ latexProcessor = Processor
   , processDirectory = latexProcessDirectory
   , processSummary = \a b -> return ()
   , processExtension = ".tex"
+  , processPostprocess = latexProcessPostprocess
   }
 
 latexProcessEquation :: MathType -> Text -> Inline
@@ -520,3 +526,6 @@ latexProcessDirectory (Directory dirPath children) = Just $
     l = map latexLineOfFile sectionPaths ++
       if null appendixPaths then []
       else "\\appendix" : map latexLineOfFile appendixPaths
+
+latexProcessPostprocess :: Text -> Text
+latexProcessPostprocess = T.replace "{\\raggedright\\arraybackslash}p" "{\\raggedright\\arraybackslash}m"
